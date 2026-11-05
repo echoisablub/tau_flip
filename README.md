@@ -2,7 +2,7 @@
 
 Wie schnell schwingt der SLM nach einem Grauwert-Sprung auf den neuen Wert ein, und wie hängt das von Temperatur und LUT-Offset ab?
 
-**Kurz gesagt:** Bei 50 °C sind große Sprünge bei Offset 0 rund 1,3- bis 3-mal schneller als bei 25 °C. Sprünge nach oben werden mit steigendem Offset langsamer, Sprünge nach unten deutlich weniger. Kleine Sprünge bis rund 24 Grau sind noch nicht belastbar. 75 °C folgt.
+**Kurz gesagt:** Wärmer ist schneller: `240 → 16` braucht bei Offset 0 3,39 ms bei 25 °C, 1,36 ms bei 50 °C und 0,90 ms bei 75 °C. Sprünge nach oben werden mit steigendem Offset langsamer, Sprünge nach unten deutlich weniger. Kleine Sprünge bis rund 24 Grau sind noch nicht belastbar. Bei 75 °C sind auch einige große Sprünge unsicher, siehe [Grenzen der Messung](#grenzen-der-messung).
 
 ## Inhalt
 
@@ -41,38 +41,56 @@ Wie schnell schwingt der SLM nach einem Grauwert-Sprung auf den neuen Wert ein, 
 | `208 → 48` | runter | 1,61 | 1,60 | 1,91 | 1,68 |
 | `127 → 0` | runter | 1,63 | 1,62 | 1,47 | 1,65 |
 
+### 75 °C (Sollwert)
+
+Diese Tabelle bitte mit Vorsicht lesen: Die `16 → 240`-Werte sind nicht verlässlich, und `0 → 127` und `4 → 126` streuen zum Teil sehr stark, siehe [Grenzen der Messung](#grenzen-der-messung).
+
+| Sprung | Richtung | Offset 0 | Offset 50 | Offset 100 | Offset 150 |
+|---|---|---:|---:|---:|---:|
+| `16 → 240` | hoch | 0,71 | 2,71 | *0,36* | 0,67 |
+| `48 → 208` | hoch | 0,33 | 0,36 | 0,37 | 0,91 |
+| `0 → 127` | hoch | 1,43 | 1,71 | 1,62 | 2,45 |
+| `4 → 126` | hoch | 1,79 | 1,68 | 1,89 | 2,37 |
+| `240 → 16` | runter | 0,90 | 0,95 | 1,07 | 1,24 |
+| `208 → 48` | runter | 1,20 | 1,23 | 1,23 | 1,28 |
+| `127 → 0` | runter | 1,25 | 1,27 | 1,45 | 1,48 |
+
 ### Was man daraus ablesen kann
 
-- **Temperatur:** Bei Offset 0 sind die Sprünge dieser Tabellen bei 50 °C rund 1,3- bis 3-mal schneller als bei 25 °C, zum Beispiel `240 → 16` mit 3,39 → 1,36 ms.
+- **Temperatur:** Bei Offset 0 sind die Sprünge dieser Tabellen bei 50 °C rund 1,3- bis 3-mal schneller als bei 25 °C, zum Beispiel `240 → 16` mit 3,39 → 1,36 ms. Bei 75 °C geht es weiter nach unten, auf 0,90 ms, aber die Schritte werden kleiner, und `16 → 240` wird hier sogar langsamer gemessen, was vermutlich am Fit liegt.
 - **Offset, Sprünge nach oben:** Sie werden mit dem Offset langsamer. Bei 25 °C wird `16 → 240` von Offset 0 bis 150 um den Faktor 6 langsamer, bei 50 °C rund um den Faktor 2,6.
-- **Offset, Sprünge nach unten:** Sie hängen weniger vom Offset ab. Bei 25 °C bleiben sie bis Offset 100 fast gleich, bei 50 °C ändern sie sich nur wenig.
+- **Offset, Sprünge nach unten:** Sie hängen weniger vom Offset ab. Bei 25 °C bleiben sie bis Offset 100 fast gleich, bei 50 °C und 75 °C ändern sie sich nur wenig.
 - **Richtung:** Bei kleinem Offset sind die größten Sprünge nach oben deutlich schneller als nach unten, bei 25 °C und Offset 0 zum Beispiel `16 → 240` mit 0,52 ms gegen `240 → 16` mit 3,39 ms.
 
 ### Reproduzierbarkeit
 
 Spannweite von τ zwischen 3 Wiederholungen, Median je Sprunggröße, jeweils über die Offsets 0, 50, 100 und 150:
 
-| Sprunggröße (Grau) | 25 °C | 50 °C |
-|---:|---|---|
-| bis 8 | 58 / 74 / 58 / 76 % | 52 / 84 / 151 / 90 % |
-| 16 | 34 / 28 / 16 / 53 % | 29 / 31 / 39 / 101 % |
-| 24 | 29 / 27 / 50 / 45 % | 25 / 16 / 40 / 68 % |
-| 25–64 | 27 / 11 / 5 / 16 % | 15 / 39 / 37 / 20 % |
-| 65–127 | 3 / 4 / 3 / 18 % | 9 / 12 / 15 / 4 % |
-| über 127 | 3 / 1 / 3 / 3 % | 2 / 11 / 10 / 7 % |
+| Sprunggröße (Grau) | 25 °C | 50 °C | 75 °C |
+|---:|---|---|---|
+| bis 8 | 58 / 74 / 58 / 76 % | 52 / 84 / 151 / 90 % | 58 / 55 / 67 / 587 % |
+| 16 | 34 / 28 / 16 / 53 % | 29 / 31 / 39 / 101 % | 51 / 29 / 34 / 105 % |
+| 24 | 29 / 27 / 50 / 45 % | 25 / 16 / 40 / 68 % | 13 / 36 / 12 / 110 % |
+| 25–64 | 27 / 11 / 5 / 16 % | 15 / 39 / 37 / 20 % | 40 / 46 / 21 / 30 % |
+| 65–127 | 3 / 4 / 3 / 18 % | 9 / 12 / 15 / 4 % | 25 / 28 / 5 / 70 % |
+| über 127 | 3 / 1 / 3 / 3 % | 2 / 11 / 10 / 7 % | 8 / 17 / 7 / 9 % |
+
+Die Streuung nimmt mit der Temperatur eher zu. Die Ursache ist noch nicht geklärt.
 
 ### Phasenhub und Stabilität
 
 Gemessen mit einem Gray-Scan: gleichmäßige Grauwerte, eingeschwungenes Signal geteilt durch die Ref-Diode.
 
-| Prüfung | 25 °C | 50 °C |
-|---|---|---|
-| Phasenhub Offset 0 | rund 2,18π | rund 2,37π |
-| Phasenhub Offset 150 | rund 2,03π | rund 2,07π |
-| Offset 0 zweimal geladen, Abweichung | 0,7 % | 1,4 % |
-| Offset 150 gegen 0, aufgetragen gegen die Spannung | 1,8 % | 2,5 % |
-| Offset 150 gegen 0, aufgetragen gegen den Grauwert | 67 % | 63 % |
-| Kennlinie am Anfang und Ende der Messung | nicht gemessen | 1,7 % Änderung in 23 Minuten |
+| Prüfung | 25 °C | 50 °C | 75 °C |
+|---|---|---|---|
+| Phasenhub Offset 0 | rund 2,18π | rund 2,37π | rund 2,52π (grob, nur 34 Stufen) |
+| Phasenhub Offset 150 | rund 2,03π | rund 2,07π | nicht gemessen |
+| Offset 0 zweimal geladen, Abweichung | 0,7 % | 1,4 % | nicht gemessen |
+| Offset 150 gegen 0, aufgetragen gegen die Spannung | 1,8 % | 2,5 % | nicht gemessen |
+| Offset 150 gegen 0, aufgetragen gegen den Grauwert | 67 % | 63 % | nicht gemessen |
+| Kennlinie am Anfang und Ende der Messung | nicht gemessen | 1,7 % Änderung in 23 Minuten | 0,4 % Änderung in 16 Minuten (grob, 2 Shots) |
+
+**Aufheizen auf 75 °C:** Nach dem Umstellen änderte sich die Kennlinie zwischen zwei Scans um 5,3 %, dann 3,8 %, 2,4 % und 0,95 %. Stabil war sie also etwa 12 Minuten nach dem Umstellen ([`lut_check_75C_stability.csv`](lut_checks/lut_check_75C_stability.csv)).
 
 Dass die Kurven beider Offsets gegen die Spannung fast aufeinanderliegen, gegen den Grauwert aber nicht, zeigt: Die geladenen LUTs sind tatsächlich aktiv.
 
@@ -80,7 +98,7 @@ Dass die Kurven beider Offsets gegen die Spannung fast aufeinanderliegen, gegen 
 
 | Punkt | Wert |
 |---|---|
-| **Temperaturen** | 25 °C, 50 °C (Sollwert, die echte Temperatur wurde nicht ausgelesen), 75 °C folgt |
+| **Temperaturen** | 25 °C, 50 °C, 75 °C (bei 50 und 75 °C Sollwert, die echte Temperatur wurde nicht ausgelesen) |
 | **LUT-Offsets** | 0, 50, 100, 150, jeweils mit dem LUT zur Temperatur |
 | **Wiederholungen** | 3 pro Offset, gemittelt |
 | **Ablauf** | 39 Grauwert-Blöcke mit je 13 Frames (rund 9 ms), aufgeteilt auf 3 Shots mit 127, 136 und 136 ms, also 9 Shots pro Offset |
@@ -126,7 +144,8 @@ Der Buckel bei `127 → 0` ist also kein Überschwingen des SLM, sondern die Pha
 
 - **Kleine Sprünge sind noch nicht belastbar:** Ein Offset-Trend lässt sich aus ihnen nicht ablesen, auch wenn der Titel im Plot schwarz ist. Maßgeblich ist die Tabelle zur Reproduzierbarkeit.
 - **Temperatur:** Das Display zeigt nur den Sollwert. Die echte Temperatur des SLM wurde nicht ausgelesen. Dass der SLM sich verändert hat, zeigt die verschobene Kennlinie.
-- **Phasenhub:** Der Fit nimmt genau 2π an. Gemessen wurde bis zu rund 2,37π bei Offset 0 und 50 °C, dort passt die Fitkurve bei den größten Sprüngen sichtbar weniger gut. Die Offsets 50 und 100 sind ungeprüft.
+- **Phasenhub:** Der Fit nimmt genau 2π an. Gemessen wurden aber bei Offset 0 rund 2,37π bei 50 °C und rund 2,52π bei 75 °C. Dort passt die Fitkurve bei den größten Sprüngen sichtbar schlechter, was vermutlich der Grund ist. Die Offsets 50 und 100 sind bei keiner Temperatur geprüft, Offset 150 bei 75 °C auch nicht.
+- **75 °C, große Sprünge:** `16 → 240` springt zwischen den Offsets von 0,36 bis 2,71 ms und ist nicht belastbar. `0 → 127` und `4 → 126` streuen bei Offset 150 über 100 %. Besser passt hier eine Auswertung, die die gemessene Phasenkurve statt 2π verwendet. Das ist noch nicht umgesetzt.
 - **Ripple:** Das Signal schwingt bei der halben Frame-Rate (718 Hz) und bei der Frame-Rate (1436 Hz), im Mittel über 3 Wiederholungen bei 25 °C und Offset 0 mit rund 0,6 und 0,5 mV (bei rund 170 mV Maximum). Der Fit entfernt das, die Streuung von τ ändert sich dadurch aber kaum. Der Ripple ist also nicht die Hauptursache dafür.
 - **Lichtabfall:** Die Lichtleistung fällt im Shot, weil die Phaser-Kopplung heiß wird: Nach 160 ms sind noch rund 58 % übrig. Die Ref-Diode korrigiert das, aber später im Shot gibt es trotzdem weniger Signal.
 - **Fitfenster:** Mit 13 Frames pro Block sind nur rund 8 ms auswertbar. Für τ über rund 4 ms ist das zu kurz, solche Fits sind rot markiert.
@@ -139,7 +158,8 @@ Der Buckel bei `127 → 0` ist also kein Überschwingen des SLM, sondern die Pha
 |---|---|
 | [`25° C/`](25%C2%B0%20C/) | Ergebnisse 25 °C: pro Offset `.csv`, `.png` und `_fits.png` |
 | [`50° C/`](50%C2%B0%20C/) | Ergebnisse 50 °C, gleiche Struktur |
-| [`lut_checks/`](lut_checks/) | Gray-Scans: Phasenhub und Kennlinien (`lut_check` für 25 °C, `lut_check_50C` für 50 °C, `lut_check_50C_drift` für Anfang gegen Ende) |
+| [`75° C/`](75%C2%B0%20C/) | Ergebnisse 75 °C, gleiche Struktur |
+| [`lut_checks/`](lut_checks/) | Gray-Scans: Phasenhub und Kennlinien (`lut_check` für 25 °C, `lut_check_50C` für 50 °C, `lut_check_50C_drift` für Anfang gegen Ende, `lut_check_75C_stability` für das Aufheizen auf 75 °C) |
 | `tau_flip_labscript.py`, `tau_schedule.py` | Shot und Grauwert-Abfolge |
 | `tau_analyse.py` | Auswertung und Fit |
 | `tau_scope_csv.py` | Scope scharf stellen und Trace als CSV speichern |

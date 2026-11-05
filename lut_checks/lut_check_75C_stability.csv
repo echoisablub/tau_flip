@@ -1,0 +1,7 @@
+time,scan,change_from_previous_percent,range_pi,note
+16:23:20,0015,,2.77,first scan after setting 75 C
+16:25:50,0016,5.33,2.57,
+16:29:30,0017,3.82,2.54,
+16:32:00,0018,2.39,2.52,
+16:34:30,0019,0.95,2.52,measurement started
+16:50:13,0020,0.43,2.52,after the measurement
