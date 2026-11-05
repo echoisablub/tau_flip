@@ -1,0 +1,4 @@
+label,offset,folder,lut_path,lut_sha256,time
+offset 0 load 1,0,C:\Experiments\prep_lab\gray_scan_csv\2026\11\05\0011,C:\Users\admin\Desktop\Lut tests\Luts_13_07\50C\0\slm.lut,6300d1976c69a2ea38bbd123195e10d273764bf015604d59756fd50b1b1cf5d6,2026-11-05 15:55:41
+offset 150 load 1,150,C:\Experiments\prep_lab\gray_scan_csv\2026\11\05\0012,C:\Users\admin\Desktop\Lut tests\Luts_13_07\50C\150\slm.lut,49cfd89a0ad9de3125fa6d232ad8b2d604f9e7a9633d8fe4ef18a5bf2b700268,2026-11-05 15:57:53
+offset 0 load 2,0,C:\Experiments\prep_lab\gray_scan_csv\2026\11\05\0013,C:\Users\admin\Desktop\Lut tests\Luts_13_07\50C\0\slm.lut,6300d1976c69a2ea38bbd123195e10d273764bf015604d59756fd50b1b1cf5d6,2026-11-05 16:00:05
