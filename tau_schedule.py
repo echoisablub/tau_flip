@@ -5,7 +5,7 @@ Each pair (lo, hi) is shown as blocks lo, hi, lo, so both directions lo->hi and 
 are measured. The step from one pair to the next is an extra transition (kept, flagged).
  
 1. Wraps: 240 <-> 16 and 208 <-> 48 (the pixel travels the long way, ~200 / ~160 grays).
-2. Sort range |dg| = 4, 8, 16, 24, centred on g = 64 and g = 192. In the 36-frame sort the
+2. Sort range |dg| = 4, 8, 16, 24, centred on the values in CENTRES. In the 36-frame sort the
    planned step is pi/36 (dg ~ 3.5), the largest actual step 0.54 rad (dg ~ 22).
 3. Larger steps |dg| = 32, 64, 127, centred on g = 64.
 4. Optional (OPTIONAL = True): dg = 16 centred on g = 16, 112, 160, 240.
@@ -13,11 +13,11 @@ are measured. The step from one pair to the next is an extra transition (kept, f
 import numpy as np
  
 MAX_FRAMES = 752
-OPTIONAL = True
+OPTIONAL = False
  
 WRAPS = [(16, 240), (48, 208)]
 STEPS = [4, 8, 16, 24]
-CENTRES = [64, 192]
+CENTRES = [16, 128]  # steep part of the PBS curve for the current phase bias; 64 and 192 are its extrema
 LARGE = [32, 64, 127]
 LARGE_CENTRE = 64
 OPT_CENTRES = [16, 112, 160, 240]
@@ -46,6 +46,20 @@ def blocks(n_cycles=1, optional=OPTIONAL):
 def gray_sequence(hold, n_cycles=1, optional=OPTIONAL):
     """Gray value of every frame."""
     return np.repeat(blocks(n_cycles, optional), hold)
+
+
+def parts(n_parts, optional=OPTIONAL):
+    """Block numbers per shot when the list is split over n_parts shots. Every shot after the
+    first starts with the last block of the shot before, so no transition is lost."""
+    cuts = np.linspace(0, len(blocks(1, optional)), n_parts + 1).round().astype(int)
+    return [list(range(max(a - 1, 0), b)) for a, b in zip(cuts[:-1], cuts[1:])]
+
+
+def part_sequence(hold, part, n_parts, optional=OPTIONAL):
+    """Gray value of every frame of one shot. Its first block lasts twice as long, because it
+    has to settle from whatever the SLM showed before."""
+    grays = [blocks(1, optional)[i] for i in parts(n_parts, optional)[part]]
+    return np.repeat(grays[:1] + grays, hold)
  
  
 def transitions(n_cycles=1, optional=OPTIONAL):
