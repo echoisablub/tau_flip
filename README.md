@@ -26,7 +26,7 @@ Wie schnell schwingt der SLM nach einem Grauwert-Sprung auf den neuen Wert ein, 
 | **Ergebnis pro Sprung** | τ, Verzögerung, Sprunghöhe in mV, Qualität |
 
 > **Zwei Messvarianten:** Die Tabelle beschreibt den ersten Sweep mit einem langen Shot (Ordner `0018` bis `0021`).
-> Der Plot unten und die τ-Werte in diesem Dokument stammen aus der Wiederholung bei Offset 0 (Ordner `0023`): dieselben 38 Sprünge, aber auf 3 Shots mit 127, 136 und 136 ms verteilt, 3 Wiederholungen (9 Shots) und doppeltes Licht.
+> Der Plot unten und die τ-Werte in diesem Dokument stammen aus der Wiederholung (Ordner `0023` bis `0026` für Offset 0, 50, 100, 150): dieselben 38 Sprünge, aber auf 3 Shots mit 127, 136 und 136 ms verteilt, 3 Wiederholungen (9 Shots pro Offset) und doppeltes Licht. Der Fit enthält hier zusätzlich den Dunkelabzug und einen 718-Hz-Term.
 
 ## So liest du ein Feld im Fit-Plot
 
@@ -59,5 +59,44 @@ Der Buckel bei `127 → 0` ist also kein Überschwingen des SLM, sondern die Pha
 ## Was du daraus ablesen kannst
 
 - **Große Sprünge sind am zuverlässigsten:** Messung und Fit liegen fast perfekt übereinander, und die Wiederholungen stimmen auf wenige Prozent überein.
-- **Richtung macht einen großen Unterschied:** `16 → 240` braucht 0,53 ms, `240 → 16` aber 3,40 ms. `48 → 208` braucht 1,02 ms, zurück sind es 2,84 ms. Nach oben (höhere Spannung) geht es also deutlich schneller.
+- **Richtung macht einen großen Unterschied:** `16 → 240` braucht 0,53 ms, `240 → 16` aber 3,39 ms. `48 → 208` braucht 1,01 ms, zurück sind es 2,84 ms. Nach oben (höhere Spannung) geht es also deutlich schneller.
 - **Typischer Wert:** Viele Sprünge liegen bei rund 2–3 ms. Wegen der großen Streuung sind die kleinen davon aber noch mit Vorsicht zu lesen.
+
+## Ergebnisse bei 25 °C
+
+τ in ms, Fit über den Mittelwert aus 3 Wiederholungen. Die Tabelle enthält nur große Sprünge, die bei den meisten Offsets gut reproduzierbar sind.
+
+| Sprung | Richtung | Offset 0 | Offset 50 | Offset 100 | Offset 150 |
+|---|---|---:|---:|---:|---:|
+| `16 → 240` | hoch | 0,53 | 0,74 | 1,29 | 3,30 |
+| `48 → 208` | hoch | 1,01 | 1,21 | 1,80 | 3,58 |
+| `0 → 127` | hoch | 2,79 | 3,55 | 2,94 | 4,35 |
+| `4 → 126` | hoch | 2,79 | 3,59 | 2,82 | 4,05 |
+| `240 → 16` | runter | 3,39 | 3,22 | 3,33 | 4,36 |
+| `208 → 48` | runter | 2,84 | 3,07 | 2,85 | *6,03* |
+| `127 → 0` | runter | 2,70 | 2,72 | 3,14 | *6,20* |
+
+Kursive Werte sind als unsicher markiert, weil τ für das Fitfenster von rund 8 ms zu lang ist.
+
+- **Große Sprünge nach oben** werden mit steigendem Offset deutlich langsamer: `16 → 240` um den Faktor 6, `48 → 208` um den Faktor 3,5.
+- **Große Sprünge nach unten** bleiben bis Offset 100 fast gleich und werden erst bei Offset 150 langsamer.
+- **Reproduzierbarkeit:** Die Sprünge über 127 Grau streuen zwischen den Wiederholungen um rund 1–3 %, die von 65 bis 127 Grau bei Offset 0 bis 100 um rund 3–4 %, bei Offset 150 um rund 18 %.
+
+## Grenzen der Messung
+
+- **Kleine Sprünge sind noch nicht belastbar:** Bei Sprüngen bis 8 Grau streut τ zwischen den Wiederholungen meist um mehr als 50 %, bei 16 bis 64 Grau typisch um 10–50 %. Ein Offset-Trend lässt sich daraus nicht ablesen, auch wenn der Titel im Plot schwarz ist.
+- **Ripple bei 718 Hz:** Das Signal schwingt bei der halben Frame-Rate, bei Offset 0 mit typisch rund 1,6 mV Amplitude im Einzelshot und rund 0,65 mV im Mittel über 3 Wiederholungen (bei rund 170 mV Maximum). Der Fit berücksichtigt das. Das Restrauschen halbiert sich dadurch, die Streuung von τ wird aber nur bei Sprüngen bis 8 Grau kleiner.
+- **Lichtabfall:** Die Lichtleistung fällt im Shot, weil die Phaser-Kopplung heiß wird: Nach 160 ms sind noch rund 58 % übrig. Die Ref-Diode korrigiert das, aber später im Shot gibt es trotzdem weniger Signal.
+- **Fitfenster:** Mit 13 Frames pro Block sind nur rund 8 ms auswertbar. Für τ über rund 4 ms ist das zu kurz, solche Fits sind rot markiert.
+- **Phasenhub:** Der Fit nimmt genau 2π an. Gemessen wurden rund 2,18π bei Offset 0 und rund 2,03π bei Offset 150, die Offsets 50 und 100 sind ungeprüft (Plot: [`../../../../gray_scan_csv/2026/11/05/lut_check.png`](../../../../gray_scan_csv/2026/11/05/lut_check.png)).
+
+## Dateien
+
+| Offset | Ordner | Ergebnisse | Fit-Plot |
+|---:|---|---|---|
+| 0 | `0023` | [`tau_25C_O000.csv`](0023/tau_25C_O000.csv) | [`tau_25C_O000_fits.png`](0023/tau_25C_O000_fits.png) |
+| 50 | `0024` | [`tau_25C_O050.csv`](0024/tau_25C_O050.csv) | [`tau_25C_O050_fits.png`](0024/tau_25C_O050_fits.png) |
+| 100 | `0025` | [`tau_25C_O100.csv`](0025/tau_25C_O100.csv) | [`tau_25C_O100_fits.png`](0025/tau_25C_O100_fits.png) |
+| 150 | `0026` | [`tau_25C_O150.csv`](0026/tau_25C_O150.csv) | [`tau_25C_O150_fits.png`](0026/tau_25C_O150_fits.png) |
+
+In diesen Dateien gilt eine Grenze von 15 mV für „Sprung zu klein“, passend zum höheren Signal. Der erste Sweep mit einem langen Shot liegt in `0018` bis `0021` und ist dort ohne Dunkelabzug ausgewertet.
