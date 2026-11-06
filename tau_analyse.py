@@ -11,7 +11,8 @@ Several traces of the same sequence are averaged per transition before the fit.
 Model (option C, PBS): the PD sees
     i(t) = A * cos^2(phi(t) / 2) + B + m * t, with
     phi(t) = theta + phi_to + (phi_from - phi_to) * exp(-(t - t0 - d) / tau).
-phi_from / phi_to = g * 2pi / 255 from the commanded gray values (calibrated LUT).
+phi_from / phi_to = g * 2pi / 255 from the commanded gray values, or with --phase-cal the
+phi(g) measured by the gray scan for this LUT offset (gray_scan_analyse summary CSV).
 t0 = output-trigger edge of the block. Free: tau, A, B, drift m, delay d, phase bias theta.
 theta covers the bias of the PBS arm, and m the slow signal drift during a block. The
 fit also handles transitions that pass through an intensity extremum.
@@ -107,9 +108,25 @@ def bin_mean(x, n):
     return x[:n_bins * n].reshape(n_bins, n).mean(axis=1)
 
 
-def fit_transition(dt, y, g_from, g_to, a_max):
+def linear_phase(gray):
+    return gray * TWO_PI / 255
+
+
+def load_phase_cal(path, offset):
+    """phi(gray) from a gray-scan summary CSV: mean of the loads with this LUT offset."""
+    from gray_scan_analyse import phase
+    cal = pd.read_csv(path)
+    cal = cal[cal.offset == int(offset)]
+    if cal.empty:
+        sys.exit(f"{path}: no gray scan with offset {offset}")
+    total, c1, c2 = cal.range_pi.mean() * np.pi, cal.c1.mean(), cal.c2.mean()
+    print(f"phase calibration: {len(cal)} load(s), range {total / np.pi:.3f} pi")
+    return lambda gray: phase(gray, total, c1, c2)
+
+
+def fit_transition(dt, y, g_from, g_to, a_max, phase_of=linear_phase):
     """Fit one transition from several starting points; returns (f, p, cov) of the best fit."""
-    f = make_model(g_from * TWO_PI / 255, g_to * TWO_PI / 255)
+    f = make_model(phase_of(g_from), phase_of(g_to))
     span = max(np.ptp(y), 1e-6)
     lower = [TAU_MIN, 0, -np.inf, -np.inf, -PRE_EDGE, -np.pi, -np.inf, -np.inf, -np.inf, -np.inf]
     upper = [TAU_MAX, a_max, np.inf, np.inf, DELAY_MAX, np.pi, np.inf, np.inf, np.inf, np.inf]
@@ -218,14 +235,14 @@ def average_segments(traces):
     return averaged
 
 
-def fit_rows(rows, a_max, min_step=MIN_STEP_V):
+def fit_rows(rows, a_max, min_step=MIN_STEP_V, phase_of=linear_phase):
     """Fit every transition and add the results to its row."""
     for row in rows:
         dt_b, y_b = row["_dt_bin"], row["_y_bin"]
         if len(dt_b) < 20:
             row.update(note="too few samples", fit_ok=0)
             continue
-        f, p, cov = fit_transition(dt_b, y_b, row["g_from"], row["g_to"], a_max)
+        f, p, cov = fit_transition(dt_b, y_b, row["g_from"], row["g_to"], a_max, phase_of)
         if p is None:
             row.update(note="fit failed", fit_ok=0)
         else:
@@ -298,7 +315,10 @@ def main():
     ap.add_argument("--plot", action="store_true")
     ap.add_argument("--min-step-mv", type=float, default=MIN_STEP_V * 1e3,
                     help="smaller steps are flagged; scale it with the PD signal")
+    ap.add_argument("--phase-cal", help="gray-scan summary CSV; phi(gray) for --offset "
+                    "instead of gray * 2pi / 255")
     a = ap.parse_args()
+    phase_of = load_phase_cal(a.phase_cal, a.offset) if a.phase_cal else linear_phase
 
     segments = {}
     a_max = 0.0
@@ -317,7 +337,7 @@ def main():
         for r in averaged:
             r.update(temp_C=a.temp, lut_offset=a.offset, n_shots=len(same_part))
         rows += averaged
-    rows = fit_rows(sorted(rows, key=lambda r: r["_block"]), a_max, a.min_step_mv * 1e-3)
+    rows = fit_rows(sorted(rows, key=lambda r: r["_block"]), a_max, a.min_step_mv * 1e-3, phase_of)
     keys = ["temp_C", "lut_offset", "n_shots", "group", "g_from", "g_to", "dg", "direction",
             "tau_ms", "dtau_ms", "delay_us", "t10_90_ms", "t0", "fit_ok", "note",
             "theta_rad", "step_V", "noise_V", "r2", "ripple_V", "ripple2_V"]
