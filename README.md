@@ -10,6 +10,7 @@ Wie schnell schwingt der SLM nach einem Grauwert-Sprung auf den neuen Wert ein, 
 - [Was wurde gemessen?](#was-wurde-gemessen)
 - [So liest du ein Feld im Fit-Plot](#so-liest-du-ein-feld-im-fit-plot)
 - [Warum die Kurven so verschieden aussehen](#warum-die-kurven-so-verschieden-aussehen)
+- [Fit mit gemessener Phasenkurve](#fit-mit-gemessener-phasenkurve)
 - [Grenzen der Messung](#grenzen-der-messung)
 - [Dateien](#dateien)
 
@@ -140,12 +141,38 @@ Die PD misst nicht die Phase direkt, sondern die Intensität hinter dem PBS, und
 
 Der Buckel bei `127 → 0` ist also kein Überschwingen des SLM, sondern die Phase, die auf ihrem Weg das Maximum passiert. Genau das berücksichtigt der Fit.
 
+## Fit mit gemessener Phasenkurve
+
+Bisher nimmt der Fit φ(g) = g · 2π / 255 an. Mit `--phase-cal` verwendet `tau_analyse.py` stattdessen die vom Gray-Scan gemessene Kurve φ(g) für den jeweiligen Offset. Neu ausgewertet sind bisher nur **25 °C und 50 °C bei Offset 0**, mit denselben Rohdaten (`_pcal`-Dateien in den Temperaturordnern).
+
+```
+python tau_analyse.py <traces> --hold 13 --temp 50 --offset 0 --min-step-mv 15 --plot \
+    --phase-cal lut_checks/lut_check_50C_summary.csv --out tau_50C_O000_pcal.csv
+```
+
+τ in ms bei Offset 0, alt mit 2π und neu mit der gemessenen Kurve:
+
+| Sprung | 25 °C alt | 25 °C neu | 50 °C alt | 50 °C neu |
+|---|---:|---:|---:|---:|
+| `16 → 240` | 0,52 | 0,60 | 0,40 | 0,31 |
+| `48 → 208` | 1,01 | 1,11 | 0,42 | 0,46 |
+| `0 → 127` | 2,77 | 2,76 | 0,96 | 0,98 |
+| `4 → 126` | 2,74 | 2,74 | 1,00 | 1,04 |
+| `240 → 16` | 3,39 | 3,61 | 1,36 | 1,75 |
+| `208 → 48` | 2,84 | 3,14 | 1,61 | 1,65 |
+| `127 → 0` | 2,72 | 2,67 | 1,63 | 1,75 |
+
+- **25 °C** (Phasenhub rund 2,18π): Die Sprünge über das ganze Band werden 6–14 % langsamer, `0 → 127`, `4 → 126` und `127 → 0` bleiben gleich. Nutzbare Fits: 22 von 38, wie vorher.
+- **50 °C** (Phasenhub rund 2,37π): `240 → 16` wird 28 % langsamer und passt jetzt deutlich besser (R² 0,986 → 0,998). `16 → 240` wird dagegen 24 % schneller, passt aber schlechter (R² 0,953 → 0,917) und bleibt unsicher. Nutzbare Fits: 30 statt 27 von 38.
+- **Mittelgroße und kleine Sprünge** ändern sich bei 25 °C meist um wenige Prozent, bei 50 °C um bis zu rund 40 % (z. B. `32 → 0` 2,08 → 2,92 ms).
+- **Offen:** Offset 50 und 100 haben keinen Gray-Scan, für 75 °C gibt es nur einen groben Scan bei Offset 0.
+
 ## Grenzen der Messung
 
 - **Kleine Sprünge sind noch nicht belastbar:** Ein Offset-Trend lässt sich aus ihnen nicht ablesen, auch wenn der Titel im Plot schwarz ist. Maßgeblich ist die Tabelle zur Reproduzierbarkeit.
 - **Temperatur:** Das Display zeigt nur den Sollwert. Die echte Temperatur des SLM wurde nicht ausgelesen. Dass der SLM sich verändert hat, zeigt die verschobene Kennlinie.
 - **Phasenhub:** Der Fit nimmt genau 2π an. Gemessen wurden aber bei Offset 0 rund 2,37π bei 50 °C und rund 2,52π bei 75 °C. Dort passt die Fitkurve bei den größten Sprüngen sichtbar schlechter, was vermutlich der Grund ist. Die Offsets 50 und 100 sind bei keiner Temperatur geprüft, Offset 150 bei 75 °C auch nicht.
-- **75 °C, große Sprünge:** `16 → 240` springt zwischen den Offsets von 0,36 bis 2,71 ms und ist nicht belastbar. `0 → 127` und `4 → 126` streuen bei Offset 150 über 100 %. Besser passt hier eine Auswertung, die die gemessene Phasenkurve statt 2π verwendet. Das ist noch nicht umgesetzt.
+- **75 °C, große Sprünge:** `16 → 240` springt zwischen den Offsets von 0,36 bis 2,71 ms und ist nicht belastbar. `0 → 127` und `4 → 126` streuen bei Offset 150 über 100 %. Eine Auswertung mit der gemessenen Phasenkurve gibt es bisher nur für 25 °C und 50 °C bei Offset 0, siehe [Fit mit gemessener Phasenkurve](#fit-mit-gemessener-phasenkurve).
 - **Ripple:** Das Signal schwingt bei der halben Frame-Rate (718 Hz) und bei der Frame-Rate (1436 Hz), im Mittel über 3 Wiederholungen bei 25 °C und Offset 0 mit rund 0,6 und 0,5 mV (bei rund 170 mV Maximum). Der Fit entfernt das, die Streuung von τ ändert sich dadurch aber kaum. Der Ripple ist also nicht die Hauptursache dafür.
 - **Lichtabfall:** Die Lichtleistung fällt im Shot, weil die Phaser-Kopplung heiß wird: Nach 160 ms sind noch rund 58 % übrig. Die Ref-Diode korrigiert das, aber später im Shot gibt es trotzdem weniger Signal.
 - **Fitfenster:** Mit 13 Frames pro Block sind nur rund 8 ms auswertbar. Für τ über rund 4 ms ist das zu kurz, solche Fits sind rot markiert.
@@ -156,7 +183,7 @@ Der Buckel bei `127 → 0` ist also kein Überschwingen des SLM, sondern die Pha
 
 | Pfad | Inhalt |
 |---|---|
-| [`25° C/`](25%C2%B0%20C/) | Ergebnisse 25 °C: pro Offset `.csv`, `.png` und `_fits.png` |
+| [`25° C/`](25%C2%B0%20C/) | Ergebnisse 25 °C: pro Offset `.csv`, `.png` und `_fits.png`; `_pcal` = Fit mit gemessener Phasenkurve |
 | [`50° C/`](50%C2%B0%20C/) | Ergebnisse 50 °C, gleiche Struktur |
 | [`75° C/`](75%C2%B0%20C/) | Ergebnisse 75 °C, gleiche Struktur |
 | [`lut_checks/`](lut_checks/) | Gray-Scans: Phasenhub und Kennlinien (`lut_check` für 25 °C, `lut_check_50C` für 50 °C, `lut_check_50C_drift` für Anfang gegen Ende, `lut_check_75C_stability` für das Aufheizen auf 75 °C) |
